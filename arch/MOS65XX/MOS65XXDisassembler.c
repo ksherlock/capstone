@@ -3,6 +3,7 @@
 
 #include "capstone/mos65xx.h"
 #include "MOS65XXDisassembler.h"
+#include "MOS65XXDisassemblerInternals.h"
 
 typedef struct OpInfo {
 	mos65xx_insn ins;
@@ -444,6 +445,9 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 {
 #ifndef CAPSTONE_DIET
 	unsigned char opcode = MI->Opcode;
+	mos65xx_info *info = (mos65xx_info *)PrinterInfo;
+
+	const char *prefix = info->hex_prefix ? info->hex_prefix : "0x";
 
 	SStream_concat0(O, InstructionInfoTable[OpInfoTable[MI->Opcode].ins].name);
 	unsigned int value = MI->Operands[0].ImmVal;
@@ -460,47 +464,48 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 			break;
 
 		case MOS65XX_AM_ABS:
-			SStream_concat(O, " $0x%04x", value);
+			SStream_concat(O, " %s%04x", prefix, value);
 			break;
 
 		case MOS65XX_AM_IMM:
-			SStream_concat(O, " #$0x%02x", value);
+			SStream_concat(O, " #%s%02x", prefix, value);
 			break;
 
 		case MOS65XX_AM_ZP:
-			SStream_concat(O, " $0x%02x", value);
+			SStream_concat(O, " %s%02x", prefix, value);
 			break;
 
 		case MOS65XX_AM_ABSX:
-			SStream_concat(O, " $0x%04x, x", value);
+			SStream_concat(O, " %s%04x, x", prefix, value);
 			break;
 
 		case MOS65XX_AM_ABSY:
-			SStream_concat(O, " $0x%04x, y", value);
+			SStream_concat(O, " %s%04x, y", prefix, value);
 			break;
 
 		case MOS65XX_AM_ZPX:
-			SStream_concat(O, " $0x%02x, x", value);
+			SStream_concat(O, " %s%02x, x", prefix, value);
 			break;
 
 		case MOS65XX_AM_ZPY:
-			SStream_concat(O, " $0x%02x, y", value);
+			SStream_concat(O, " %s%02x, y", prefix, value);
 			break;
 
 		case MOS65XX_AM_REL:
-			SStream_concat(O, " $0x%04x", MI->address + (signed char) value + 2);
+			SStream_concat(O, " %s%04x", prefix, 
+				(MI->address + (signed char) value + 2) & 0xffff);
 			break;
 
 		case MOS65XX_AM_IND:
-			SStream_concat(O, " ($0x%04x)", value);
+			SStream_concat(O, " (%s%04x)", prefix, value);
 			break;
 
 		case MOS65XX_AM_INDX:
-			SStream_concat(O, " ($0x%02x, x)", value);
+			SStream_concat(O, " (%s%02x, x)", prefix, value);
 			break;
 
 		case MOS65XX_AM_INDY:
-			SStream_concat(O, " ($0x%02x), y", value);
+			SStream_concat(O, " (%s%02x), y", prefix, value);
 			break;
 	}
 #endif
@@ -512,11 +517,18 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 	unsigned char opcode;
 	unsigned char len;
 	mos65xx_insn ins;
+	int cpu_type = MOS65XX_CPU_TYPE_6502;
+	cs_struct* handle = MI->csh;
+	mos65xx_info *info = (mos65xx_info *)handle->printer_info;
 
 	if (code_len == 0) {
 		*size = 1;
 		return false;
 	}
+
+	if (handle->mode & CS_MODE_MOS65XX_65C02)
+		cpu_type = MOS65XX_CPU_TYPE_6502;
+	info->cpu_type = cpu_type;
 
 	opcode = code[0];
 	ins = OpInfoTable[opcode].ins;
