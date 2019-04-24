@@ -223,11 +223,10 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 {
 #ifndef CAPSTONE_DIET
-	unsigned char opcode = MI->Opcode;
+	unsigned char opcode = MCInst_getOpcode(MI);
 	mos65xx_info *info = (mos65xx_info *)PrinterInfo;
-	unsigned cpu_offset = info->cpu_type * 256;
 
-	OpInfo opinfo = OpInfoTable[cpu_offset + opcode];
+	OpInfo opinfo = OpInfoTable[opcode];
 
 	const char *prefix = info->hex_prefix ? info->hex_prefix : "0x";
 
@@ -417,8 +416,9 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 	}
 
 	MI->address = address;
-	MI->Opcode = opcode;
-	MI->OpcodePub = opinfo.ins;
+
+	MCInst_setOpcode(MI, cpu_offset + opcode);
+	MCInst_setOpcodePub(MI, opinfo.ins);
 
 
 	*size = len;
@@ -507,20 +507,12 @@ const char* MOS65XX_reg_name(csh handle, unsigned int reg)
 
 void MOS65XX_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
 {
-	insn->id = id;
-	return;
+	/* id is cpu_offset + opcode */
 
-	unsigned cpu_offset = 0;
-	int cpu_type = MOS65XX_CPU_TYPE_6502;
-	mos65xx_info *info = (mos65xx_info *)h->printer_info;
-
-	cpu_type = info->cpu_type;
-	cpu_offset = cpu_type * 256;
-
-	if (id < 256) {
-		insn->id = OpInfoTable[cpu_offset + id].ins;
+	if (id < ARR_SIZE(OpInfoTable)) {
+		insn->id = OpInfoTable[id].ins;
 	}
-}
+
 
 const char *MOS65XX_group_name(csh handle, unsigned int id)
 {
