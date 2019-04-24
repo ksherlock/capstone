@@ -19,6 +19,8 @@ cs_err MOS65XX_global_init(cs_struct *ud)
 	info = cs_mem_malloc(sizeof(*info));
 	info->hex_prefix = NULL;
 	info->cpu_type = MOS65XX_CPU_TYPE_6502;
+	info->long_m = 0;
+	info->long_x = 0;
 
 	ud->printer = MOS65XX_printInst;
 	ud->printer_info = info;
@@ -38,6 +40,19 @@ cs_err MOS65XX_option(cs_struct *handle, cs_opt_type type, size_t value)
 		default:
 			break;
 		case CS_OPT_MODE:
+
+			if (value & CS_MODE_MOS65XX_6502)
+				info->cpu_type = MOS65XX_CPU_TYPE_6502;
+			if (value & CS_MODE_MOS65XX_65C02)
+				info->cpu_type = MOS65XX_CPU_TYPE_65C02;
+			if (value & CS_MODE_MOS65XX_W65C02)
+				info->cpu_type = MOS65XX_CPU_TYPE_W65C02;
+			if (value & CS_MODE_MOS65XX_65816|CS_MODE_MOS65XX_65816_LONG_M|CS_MODE_MOS65XX_65816_LONG_X)
+				info->cpu_type = MOS65XX_CPU_TYPE_65816;
+
+			info->long_m = value & CS_MODE_MOS65XX_65816_LONG_M ? 1 : 0;
+			info->long_x = value & CS_MODE_MOS65XX_65816_LONG_X ? 1 : 0;
+
 			handle->mode = (cs_mode)value;
 			break;
 		case CS_OPT_SYNTAX:

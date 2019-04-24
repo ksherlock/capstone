@@ -8,13 +8,20 @@
 typedef struct OpInfo {
 	mos65xx_insn ins;
 	mos65xx_address_mode am;
+	int operand_bytes;
 } OpInfo;
 
+static const struct OpInfo OpInfoTable[]= {
 
 #include "m6502.inc"
+#include "m65c02.inc"
+#include "mw65c02.inc"
+#include "m65816.inc"
+
+};
 
 static const char* RegNames[] = {
-	"invalid", "A", "X", "Y", "P", "SP"
+	"invalid", "A", "X", "Y", "P", "SP", "DP", "B", "K" 
 };
 
 #ifndef CAPSTONE_DIET
@@ -23,7 +30,7 @@ static const char* GroupNames[] = {
 	"jump",
 	"call",
 	"ret",
-	NULL,
+	"int",
 	"iret",
 	"branch_relative"
 };
@@ -36,135 +43,160 @@ typedef struct InstructionInfo {
 } InstructionInfo;
 
 static const struct InstructionInfo InstructionInfoTable[]= {
-	{ "invalid", MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, false },
-	{ "adc",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_INVALID, true },
-	{ "and",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_INVALID, true },
-	{ "asl",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "bcc",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "bcs",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "beq",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "bit",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "bmi",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "bne",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "bpl",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "brk",     MOS65XX_GRP_INVALID,         MOS65XX_REG_SP,      MOS65XX_REG_INVALID, false },
-	{ "bvc",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "bvs",     MOS65XX_GRP_BRANCH_RELATIVE, MOS65XX_REG_INVALID, MOS65XX_REG_P,       false },
-	{ "clc",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "cld",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "cli",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "clv",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "cmp",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_ACC,     true },
-	{ "cpx",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_X,       true },
-	{ "cpy",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_Y,       true },
-	{ "dec",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "dex",     MOS65XX_GRP_INVALID,         MOS65XX_REG_X,       MOS65XX_REG_X,       true },
-	{ "dey",     MOS65XX_GRP_INVALID,         MOS65XX_REG_Y,       MOS65XX_REG_Y,       true },
-	{ "eor",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "inc",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "inx",     MOS65XX_GRP_INVALID,         MOS65XX_REG_X,       MOS65XX_REG_X,       true },
-	{ "iny",     MOS65XX_GRP_INVALID,         MOS65XX_REG_Y,       MOS65XX_REG_Y,       true },
-	{ "jmp",     MOS65XX_GRP_JUMP,            MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, false },
-	{ "jsr",     MOS65XX_GRP_CALL,            MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, false },
-	{ "lda",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_INVALID, true },
-	{ "ldx",     MOS65XX_GRP_INVALID,         MOS65XX_REG_X,       MOS65XX_REG_INVALID, true },
-	{ "ldy",     MOS65XX_GRP_INVALID,         MOS65XX_REG_Y,       MOS65XX_REG_INVALID, true },
-	{ "lsr",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "nop",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, false },
-	{ "ora",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_INVALID, true },
-	{ "pha",     MOS65XX_GRP_INVALID,         MOS65XX_REG_SP,      MOS65XX_REG_ACC,     false },
-	{ "pla",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_SP,      true },
-	{ "php",     MOS65XX_GRP_INVALID,         MOS65XX_REG_SP,      MOS65XX_REG_P,       false },
-	{ "plp",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_SP,      true },
-	{ "rol",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "ror",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "rti",     MOS65XX_GRP_IRET,            MOS65XX_REG_SP,      MOS65XX_REG_INVALID, true },
-	{ "rts",     MOS65XX_GRP_RET,             MOS65XX_REG_SP,      MOS65XX_REG_INVALID, false },
-	{ "sbc",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_INVALID, true },
-	{ "sec",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "sed",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "sei",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_INVALID, true },
-	{ "sta",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_ACC,     false },
-	{ "stx",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_X,       false },
-	{ "sty",     MOS65XX_GRP_INVALID,         MOS65XX_REG_INVALID, MOS65XX_REG_Y,       false },
-	{ "tax",     MOS65XX_GRP_INVALID,         MOS65XX_REG_X,       MOS65XX_REG_ACC,     true },
-	{ "tay",     MOS65XX_GRP_INVALID,         MOS65XX_REG_Y,       MOS65XX_REG_ACC,     true },
-	{ "tsx",     MOS65XX_GRP_INVALID,         MOS65XX_REG_X,       MOS65XX_REG_SP,      true },
-	{ "txa",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_X,       true },
-	{ "txs",     MOS65XX_GRP_INVALID,         MOS65XX_REG_SP,      MOS65XX_REG_X,       true },
-	{ "tya",     MOS65XX_GRP_INVALID,         MOS65XX_REG_ACC,     MOS65XX_REG_Y,       true },
+
+#include "instruction_info.h"
+
 };
 #endif
 
-static int getInstructionLength(mos65xx_address_mode am)
-{
-	switch(am) {
-		case MOS65XX_AM_NONE:
-		case MOS65XX_AM_ACC:
-		case MOS65XX_AM_IMP:
-			return 1;
 
-		case MOS65XX_AM_IMM:
-		case MOS65XX_AM_ZPX:
-		case MOS65XX_AM_ZPY:
-		case MOS65XX_AM_ZP:
-		case MOS65XX_AM_REL:
-		case MOS65XX_AM_INDX:
-		case MOS65XX_AM_INDY:
-			return 2;
-
-		case MOS65XX_AM_ABS:
-		case MOS65XX_AM_ABSX:
-		case MOS65XX_AM_ABSY:
-		case MOS65XX_AM_IND:
-			return 3;
-		default:
-			return 1;
-	}
-}
 
 #ifndef CAPSTONE_DIET
-static void fillDetails(MCInst *MI, unsigned char opcode)
+static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 {
 	cs_detail *detail = MI->flat_insn->detail;
-	mos65xx_insn ins = OpInfoTable[opcode].ins;
-	mos65xx_address_mode am = OpInfoTable[opcode].am;
 
-	detail->mos65xx.am = am;
-	detail->mos65xx.modifies_flags = InstructionInfoTable[ins].modifies_status;
+	InstructionInfo insinfo = InstructionInfo[opinfo.ins];
+
+	detail->mos65xx.am = opinfo.am;
+	detail->mos65xx.modifies_flags = insinfo.modifies_status;
 	detail->groups_count = 0;
 	detail->regs_read_count = 0;
 	detail->regs_write_count = 0;
 	detail->mos65xx.op_count = 0;
 
-	if (InstructionInfoTable[ins].group_type != MOS65XX_GRP_INVALID) {
-		detail->groups[0] = InstructionInfoTable[ins].group_type;
+	if (insinfo.group_type != MOS65XX_GRP_INVALID) {
+		detail->groups[0] = insinfo.group_type;
 		detail->groups_count++;
 	}
 
-	if (InstructionInfoTable[ins].read != MOS65XX_REG_INVALID) {
-		detail->regs_read[detail->regs_read_count++] = InstructionInfoTable[ins].read;
-	} else if (OpInfoTable[opcode].am == MOS65XX_AM_ACC) {
-		detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_ACC;
-	} else if (OpInfoTable[opcode].am == MOS65XX_AM_INDY || OpInfoTable[opcode].am == MOS65XX_AM_ABSY || OpInfoTable[opcode].am == MOS65XX_AM_ZPY) {
-		detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
-	} else if (OpInfoTable[opcode].am == MOS65XX_AM_INDX || OpInfoTable[opcode].am == MOS65XX_AM_ABSX || OpInfoTable[opcode].am == MOS65XX_AM_ZPX) {
-		detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_X;
+	if (opinfo.am == MOS65XX_AM_REL || opinfo.MOS65XX_AM_ZP_REL) {
+		detail->groups[0] = MOS65XX_GRP_BRANCH_RELATIVE;
+		detail->groups_count++;	
 	}
 
-	if (InstructionInfoTable[ins].write != MOS65XX_REG_INVALID) {
-		detail->regs_write[detail->regs_write_count++] = InstructionInfoTable[ins].write;
-	} else if (OpInfoTable[opcode].am == MOS65XX_AM_ACC) {
+
+	if (insinfo.read != MOS65XX_REG_INVALID) {
+		detail->regs_read[detail->regs_read_count++] = insinfo.read;
+	} else switch(opinfo.am) {
+		case MOS65XX_AM_ACC:
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_ACC;
+			break;
+		case MOS65XX_AM_ZP_Y:
+		case MOS65XX_AM_ZP_IND_Y:
+		case MOS65XX_AM_ABS_Y:
+		case MOS65XX_AM_ABS_IND_Y:
+		case MOS65XX_AM_ZP_IND_LONG_Y:
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
+			break;
+
+		case MOS65XX_AM_ZP_X:
+		case MOS65XX_AM_ZP_X_IND:
+		case MOS65XX_AM_ABS_X:
+		case MOS65XX_AM_ABS_X_IND:
+		case MOS65XX_AM_ABS_LONG_X:
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_X;
+			break;
+
+		case MOS65XX_AM_SR:
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_SP;
+			break;
+		case MOS65XX_AM_SR_IND_Y:
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_SP;
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
+			break;
+
+	}
+
+	if (insinfo.write != MOS65XX_REG_INVALID) {
+		detail->regs_write[detail->regs_write_count++] = insinfo.write;
+	} else if (opinfo.am == MOS65XX_AM_ACC) {
 		detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_ACC;
 	}
 
-	if (InstructionInfoTable[ins].modifies_status) {
+
+	switch(opinfo.ins) {
+		case MOS65XX_INS_ADC:
+		case MOS65XX_INS_SBC:
+			/* ADC / SBC depend on the decimal status */
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_P;
+			break;
+		/* stack operations */
+		case MOS65XX_INS_PLA:
+		case MOS65XX_INS_PLX:
+		case MOS65XX_INS_PLY:
+		case MOS65XX_INS_PLD:
+		case MOS65XX_INS_PLB:
+		case MOS65XX_INS_PLP:
+		case MOS65XX_INS_PHP:
+		case MOS65XX_INS_PHD:
+		case MOS65XX_INS_PHA:
+		case MOS65XX_INS_PHX:
+		case MOS65XX_INS_PHY:
+		case MOS65XX_INS_PHK:
+		case MOS65XX_INS_PHB:
+		case MOS65XX_INS_PEA:
+		case MOS65XX_INS_PEI:
+		case MOS65XX_INS_PER:
+		case MOS65XX_INS_RTL:
+		case MOS65XX_INS_RTS:
+		case MOS65XX_INS_RTI:
+		case MOS65XX_INS_JSR:
+		case MOS65XX_INS_JSL:
+			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_SP;
+			detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_SP;
+			break;
+	}
+
+
+
+	if (cpu_type == MOS65XX_CPU_TYPE_65816) {
+		switch (opinfo.am) {
+			case MOS65XX_AM_ZP:
+			case MOS65XX_AM_ZP_X:
+			case MOS65XX_AM_ZP_Y:
+			case MOS65XX_AM_ZP_IND:
+			case MOS65XX_AM_ZP_X_IND:
+			case MOS65XX_AM_ZP_IND_Y:
+			case MOS65XX_AM_ZP_IND_LONG:
+			case MOS65XX_AM_ZP_IND_LONG_Y:
+				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_DP;
+				break;
+			case BLOCK:
+				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_ACC;
+				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_X;
+				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
+				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_ACC;
+				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_X;
+				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_Y;
+				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_B;
+				break;
+		}
+
+		switch (opinfo.am) {
+			case MOS65XX_AM_ZP_IND:
+			case MOS65XX_AM_ZP_X_IND:
+			case MOS65XX_AM_ZP_IND_Y:
+			case MOS65XX_AM_ABS:
+			case MOS65XX_AM_ABS_X:
+			case MOS65XX_AM_ABS_Y:
+			case MOS65XX_AM_ABS_X_IND:
+				/* these depend on the databank to generate a 24-bit address */
+				/* exceptions: PEA, PEI, and JMP (abs) */
+				if (opinfo.ins == MOS65XX_INS_PEI || opinfo.ins == MOS65XX_INS_PEA) break;
+				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_B;
+				break;
+
+		}
+	
+	}
+
+	if (insinfo.modifies_status) {
 		detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_P;
 	}
 
-	switch(am) {
+	switch(opinfo.am) {
 		case MOS65XX_AM_IMP:
-		case MOS65XX_AM_REL:
 			break;
 		case MOS65XX_AM_IMM:
 			detail->mos65xx.operands[detail->mos65xx.op_count].type = MOS65XX_OP_IMM;
@@ -176,10 +208,13 @@ static void fillDetails(MCInst *MI, unsigned char opcode)
 			detail->mos65xx.operands[detail->mos65xx.op_count].reg = MOS65XX_REG_ACC;
 			detail->mos65xx.op_count++;
 			break;
+
 		default:
-			detail->mos65xx.operands[detail->mos65xx.op_count].type = MOS65XX_OP_MEM;
-			detail->mos65xx.operands[detail->mos65xx.op_count].mem = MI->Operands[0].ImmVal;
-			detail->mos65xx.op_count++;
+			for (int i = 0; i < MI->size; ++i) {
+				detail->mos65xx.operands[detail->mos65xx.op_count].type = MOS65XX_OP_MEM;
+				detail->mos65xx.operands[detail->mos65xx.op_count].mem = MI->Operands[i].ImmVal;
+				detail->mos65xx.op_count++;
+			}
 			break;
 	}
 }
@@ -190,13 +225,25 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 #ifndef CAPSTONE_DIET
 	unsigned char opcode = MI->Opcode;
 	mos65xx_info *info = (mos65xx_info *)PrinterInfo;
+	unsigned cpu_offset = info->cpu_type * 256;
+
+	OpInfo opinfo = OpInfoTable[cpu_offset + opcode];
 
 	const char *prefix = info->hex_prefix ? info->hex_prefix : "0x";
 
-	SStream_concat0(O, InstructionInfoTable[OpInfoTable[MI->Opcode].ins].name);
+	SStream_concat0(O, InstructionInfoTable[opinfo.ins].name);
+	switch (opinfo.ins) {
+		/* special case - bit included as part of the instruction name */
+		case MOS65XX_INS_BBR:
+		case MOS65XX_INS_BBS:
+		case MOS65XX_INS_RMB:
+		case MOS65XX_INS_SMB:
+			SStream_concat(O, "%d", (opcode >> 4) & 0x07);
+			break;
+	}
 	unsigned int value = MI->Operands[0].ImmVal;
 
-	switch (OpInfoTable[opcode].am) {
+	switch (opinfo.am) {
 		default:
 			break;
 
@@ -212,45 +259,104 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 			break;
 
 		case MOS65XX_AM_IMM:
-			SStream_concat(O, " #%s%02x", prefix, value);
+			if (MI->imm_size == 1)
+				SStream_concat(O, " #%s%02x", prefix, value);
+			else
+				SStream_concat(O, " #%s%04x", prefix, value);
 			break;
 
 		case MOS65XX_AM_ZP:
 			SStream_concat(O, " %s%02x", prefix, value);
 			break;
 
-		case MOS65XX_AM_ABSX:
+		case MOS65XX_AM_INT:
+			SStream_concat(O, " %s%02x", prefix, value);
+			break;
+
+		case MOS65XX_AM_ABS_X:
 			SStream_concat(O, " %s%04x, x", prefix, value);
 			break;
 
-		case MOS65XX_AM_ABSY:
+		case MOS65XX_AM_ABS_Y:
 			SStream_concat(O, " %s%04x, y", prefix, value);
 			break;
 
-		case MOS65XX_AM_ZPX:
+		case MOS65XX_AM_ABS_LONG_X:
+			SStream_concat(O, " %s%06x, x", prefix, value);
+			break;
+
+		case MOS65XX_AM_ZP_X:
 			SStream_concat(O, " %s%02x, x", prefix, value);
 			break;
 
-		case MOS65XX_AM_ZPY:
+		case MOS65XX_AM_ZP_Y:
 			SStream_concat(O, " %s%02x, y", prefix, value);
 			break;
 
 		case MOS65XX_AM_REL:
+			if (MI->op1_size == 1)
+				value = 2 + (signed char)value;
+			else
+				value = 3 + (signed short)value;
+
 			SStream_concat(O, " %s%04x", prefix, 
-				(MI->address + (signed char) value + 2) & 0xffff);
+				(MI->address + value) & 0xffff);
 			break;
 
-		case MOS65XX_AM_IND:
+		case MOS65XX_AM_ABS_IND:
 			SStream_concat(O, " (%s%04x)", prefix, value);
 			break;
 
-		case MOS65XX_AM_INDX:
+		case MOS65XX_AM_ABS_X_IND:
+			SStream_concat(O, " (%s%04x, x)", prefix, value);
+			break;
+
+		case MOS65XX_AM_ABS_IND_LONG:
+			SStream_concat(O, " [%s%04x]", prefix, value);
+			break;
+
+		case MOS65XX_AM_ZP_IND:
+			SStream_concat(O, " (%s%02x)", prefix, value);
+			break;
+
+		case MOS65XX_AM_ZP_X_IND:
 			SStream_concat(O, " (%s%02x, x)", prefix, value);
 			break;
 
-		case MOS65XX_AM_INDY:
+		case MOS65XX_AM_ZP_IND_Y:
 			SStream_concat(O, " (%s%02x), y", prefix, value);
 			break;
+
+		case MOS65XX_AM_ZP_IND_LONG:
+			SStream_concat(O, " [%s%02x]", prefix, value);
+			break;
+
+		case MOS65XX_AM_ZP_IND_LONG_Y:
+			SStream_concat(O, " [%s%02x], y", prefix, value);
+			break;
+
+		case MOS65XX_AM_SR:
+			SStream_concat(O, " %s%02x, s", prefix, value);
+			break;
+
+		case MOS65XX_AM_SR_IND_Y:
+			SStream_concat(O, " (%s%02x, s), y", prefix, value);
+			break;
+
+		case MOS65XX_AM_BLOCK:
+			SStream_concat(O, " %s%02x, %s%02x",
+				prefix, MI->Operands[0].ImmVal,
+				prefix, MI->Operands[1].ImmVal);
+			break;
+
+		case MOS65XX_AM_ZP_REL:
+			value =	3 + (signed char)MI->Operands[1].ImmVal;
+			/* BBR0, zp, rel  and BBS0, zp, rel */
+			SStream_concat(O, " %s%02x, %s%04x",
+				prefix, MI->Operands[0].ImmVal,
+				prefix, (MI->address + value) & 0xffff);
+			break;
+
 	}
 #endif
 }
@@ -260,28 +366,51 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 {
 	unsigned char opcode;
 	unsigned char len;
+	unsigned cpu_offset = 0;
 	mos65xx_insn ins;
 	int cpu_type = MOS65XX_CPU_TYPE_6502;
 	cs_struct* handle = MI->csh;
 	mos65xx_info *info = (mos65xx_info *)handle->printer_info;
+	OpInfo opinfo;
 
 	if (code_len == 0) {
 		*size = 1;
 		return false;
 	}
 
-	if (handle->mode & CS_MODE_MOS65XX_65C02)
-		cpu_type = MOS65XX_CPU_TYPE_6502;
-	info->cpu_type = cpu_type;
+	cpu_type = info->cpu_type;
+	cpu_offset = cpu_type * 256;
 
 	opcode = code[0];
-	ins = OpInfoTable[opcode].ins;
-	if (ins == MOS65XX_INS_INVALID) {
+	opinfo = OpInfoTable[cpu_offset + opcode];
+	if (opinfo.ins == MOS65XX_INS_INVALID) {
 		*size = 1;
 		return false;
 	}
 
-	len = getInstructionLength(OpInfoTable[opcode].am);
+	len = opinfo.operand_bytes + 1;
+
+	if (cpu_type == MOS65XX_CPU_TYPE_65816 && opinfo.am == IMM) {
+		switch(opinfo.ins) {
+			case MOS65XX_INS_CPX:
+			case MOS65XX_INS_CPY:
+			case MOS65XX_INS_LDX:
+			case MOS65XX_INS_LDY:
+				if (info->long_x) ++len;
+				break;
+			case MOS65XX_INS_ADC:
+			case MOS65XX_INS_AND:
+			case MOS65XX_INS_BIT:
+			case MOS65XX_INS_CMP:
+			case MOS65XX_INS_EOR:
+			case MOS65XX_INS_LDA:
+			case MOS65XX_INS_ORA:
+			case MOS65XX_INS_SBC:
+				if (info->long_m) ++len;
+				break;
+		}
+	}
+
 	if (code_len < len) {
 		*size = 1;
 		return false;
@@ -289,19 +418,63 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 
 	MI->address = address;
 	MI->Opcode = opcode;
-	MI->OpcodePub = ins;
-	MI->size = 0;
+	MI->OpcodePub = opinfo.ins;
+
 
 	*size = len;
-	if (len == 2) {
-		MCOperand_CreateImm0(MI, code[1]);
-	} else
-	if (len == 3) {
-		MCOperand_CreateImm0(MI, (code[2]<<8) | code[1]);
+
+
+	/* needed to differentiate relative vs relative long */
+	MI->op1_size = len - 1;
+	switch (opinfo.ins) {
+		#if 0
+		case MOS65XX_INS_SMB:
+		case MOS65XX_INS_RMB:
+		case MOS65XX_INS_BBS:
+		case MOS65XX_INS_BBR:
+			/* first "operand" from opcode */
+			MCOperand_CreateImm0(MI, (code[0]>>4) & 0x07);
+			break;
+		#endif
+
+		/* 65c02 nops have 0, 1, or 2 "operands" */
+		case MOS65XX_INS_NOP:
+			for (int i = 1; i < len; ++i)
+				MCOperand_CreateImm0(MI, code[i]);
+			break;
 	}
+
+	switch (opinfo.am) {
+		case MOS65XX_AM_ZP_REL:
+			MCOperand_CreateImm0(MI, code[1]);
+			MCOperand_CreateImm0(MI, code[2]);
+			break;
+		case MOS65XX_AM_BLOCK:
+			MCOperand_CreateImm0(MI, code[2]);
+			MCOperand_CreateImm0(MI, code[1]);
+			break;
+		case MOS65XX_AM_IMP:
+		case MOS65XX_AM_ACC:
+			break;
+
+		case MOS65XX_AM_IMM:
+			MI->has_imm = 1;
+			MI->imm_size = len - 1;
+			/* 65816 immediate is either 1 or 2 bytes */
+			/* drop through */
+		default:
+			if (len == 2)
+				MCOperand_CreateImm0(MI, code[1]);
+			else if (len == 3)
+				MCOperand_CreateImm0(MI, (code[2]<<8) | code[1]);
+			else if (len == 4)
+				MCOperand_CreateImm0(MI, (code[3]<<16) | (code[2]<<8) | code[1]);
+			break;
+	}
+
 #ifndef CAPSTONE_DIET
 	if (MI->flat_insn->detail) {
-		fillDetails(MI, opcode);
+		fillDetails(MI, opinfo);
 	}
 #endif
 
@@ -334,8 +507,18 @@ const char* MOS65XX_reg_name(csh handle, unsigned int reg)
 
 void MOS65XX_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
 {
+	insn->id = id;
+	return;
+
+	unsigned cpu_offset = 0;
+	int cpu_type = MOS65XX_CPU_TYPE_6502;
+	mos65xx_info *info = (mos65xx_info *)h->printer_info;
+
+	cpu_type = info->cpu_type;
+	cpu_offset = cpu_type * 256;
+
 	if (id < 256) {
-		insn->id = OpInfoTable[id].ins;
+		insn->id = OpInfoTable[cpu_offset + id].ins;
 	}
 }
 
