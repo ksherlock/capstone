@@ -44,7 +44,7 @@ typedef struct InstructionInfo {
 
 static const struct InstructionInfo InstructionInfoTable[]= {
 
-#include "instruction_info.h"
+#include "instruction_info.inc"
 
 };
 #endif
@@ -52,11 +52,11 @@ static const struct InstructionInfo InstructionInfoTable[]= {
 
 
 #ifndef CAPSTONE_DIET
-static void fillDetails(MCInst *MI, struct OpInfo opinfo)
+static void fillDetails(MCInst *MI, struct OpInfo opinfo, int cpu_type)
 {
 	cs_detail *detail = MI->flat_insn->detail;
 
-	InstructionInfo insinfo = InstructionInfo[opinfo.ins];
+	InstructionInfo insinfo = InstructionInfoTable[opinfo.ins];
 
 	detail->mos65xx.am = opinfo.am;
 	detail->mos65xx.modifies_flags = insinfo.modifies_status;
@@ -70,7 +70,7 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 		detail->groups_count++;
 	}
 
-	if (opinfo.am == MOS65XX_AM_REL || opinfo.MOS65XX_AM_ZP_REL) {
+	if (opinfo.am == MOS65XX_AM_REL || opinfo.am == MOS65XX_AM_ZP_REL) {
 		detail->groups[0] = MOS65XX_GRP_BRANCH_RELATIVE;
 		detail->groups_count++;	
 	}
@@ -85,7 +85,6 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 		case MOS65XX_AM_ZP_Y:
 		case MOS65XX_AM_ZP_IND_Y:
 		case MOS65XX_AM_ABS_Y:
-		case MOS65XX_AM_ABS_IND_Y:
 		case MOS65XX_AM_ZP_IND_LONG_Y:
 			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
 			break;
@@ -106,6 +105,8 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
 			break;
 
+		default:
+			break;
 	}
 
 	if (insinfo.write != MOS65XX_REG_INVALID) {
@@ -146,6 +147,8 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_SP;
 			detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_SP;
 			break;
+		default:
+			break;
 	}
 
 
@@ -162,7 +165,7 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 			case MOS65XX_AM_ZP_IND_LONG_Y:
 				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_DP;
 				break;
-			case BLOCK:
+			case MOS65XX_AM_BLOCK:
 				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_ACC;
 				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_X;
 				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_Y;
@@ -170,6 +173,8 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_X;
 				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_Y;
 				detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_B;
+				break;
+			default:
 				break;
 		}
 
@@ -187,6 +192,8 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo)
 				detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_B;
 				break;
 
+			default:
+				break;
 		}
 	
 	}
@@ -238,6 +245,8 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 		case MOS65XX_INS_RMB:
 		case MOS65XX_INS_SMB:
 			SStream_concat(O, "%d", (opcode >> 4) & 0x07);
+			break;
+		default:
 			break;
 	}
 	unsigned int value = MI->Operands[0].ImmVal;
@@ -389,7 +398,7 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 
 	len = opinfo.operand_bytes + 1;
 
-	if (cpu_type == MOS65XX_CPU_TYPE_65816 && opinfo.am == IMM) {
+	if (cpu_type == MOS65XX_CPU_TYPE_65816 && opinfo.am == MOS65XX_AM_IMM) {
 		switch(opinfo.ins) {
 			case MOS65XX_INS_CPX:
 			case MOS65XX_INS_CPY:
@@ -406,6 +415,8 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 			case MOS65XX_INS_ORA:
 			case MOS65XX_INS_SBC:
 				if (info->long_m) ++len;
+				break;
+			default:
 				break;
 		}
 	}
@@ -426,22 +437,9 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 
 	/* needed to differentiate relative vs relative long */
 	MI->op1_size = len - 1;
-	switch (opinfo.ins) {
-		#if 0
-		case MOS65XX_INS_SMB:
-		case MOS65XX_INS_RMB:
-		case MOS65XX_INS_BBS:
-		case MOS65XX_INS_BBR:
-			/* first "operand" from opcode */
-			MCOperand_CreateImm0(MI, (code[0]>>4) & 0x07);
-			break;
-		#endif
-
-		/* 65c02 nops have 0, 1, or 2 "operands" */
-		case MOS65XX_INS_NOP:
-			for (int i = 1; i < len; ++i)
-				MCOperand_CreateImm0(MI, code[i]);
-			break;
+	if (opinfo.ins == MOS65XX_INS_NOP) {
+		for (int i = 1; i < len; ++i)
+			MCOperand_CreateImm0(MI, code[i]);
 	}
 
 	switch (opinfo.am) {
@@ -474,7 +472,7 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 
 #ifndef CAPSTONE_DIET
 	if (MI->flat_insn->detail) {
-		fillDetails(MI, opinfo);
+		fillDetails(MI, opinfo, cpu_type);
 	}
 #endif
 
@@ -512,7 +510,7 @@ void MOS65XX_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
 	if (id < ARR_SIZE(OpInfoTable)) {
 		insn->id = OpInfoTable[id].ins;
 	}
-
+}
 
 const char *MOS65XX_group_name(csh handle, unsigned int id)
 {

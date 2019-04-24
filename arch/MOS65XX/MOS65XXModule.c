@@ -47,7 +47,7 @@ cs_err MOS65XX_option(cs_struct *handle, cs_opt_type type, size_t value)
 				info->cpu_type = MOS65XX_CPU_TYPE_65C02;
 			if (value & CS_MODE_MOS65XX_W65C02)
 				info->cpu_type = MOS65XX_CPU_TYPE_W65C02;
-			if (value & CS_MODE_MOS65XX_65816|CS_MODE_MOS65XX_65816_LONG_M|CS_MODE_MOS65XX_65816_LONG_X)
+			if (value & (CS_MODE_MOS65XX_65816|CS_MODE_MOS65XX_65816_LONG_M|CS_MODE_MOS65XX_65816_LONG_X))
 				info->cpu_type = MOS65XX_CPU_TYPE_65816;
 
 			info->long_m = value & CS_MODE_MOS65XX_65816_LONG_M ? 1 : 0;
