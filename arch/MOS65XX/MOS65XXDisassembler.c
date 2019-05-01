@@ -379,7 +379,6 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 	unsigned char opcode;
 	unsigned char len;
 	unsigned cpu_offset = 0;
-	mos65xx_insn ins;
 	int cpu_type = MOS65XX_CPU_TYPE_6502;
 	cs_struct* handle = MI->csh;
 	mos65xx_info *info = (mos65xx_info *)handle->printer_info;
