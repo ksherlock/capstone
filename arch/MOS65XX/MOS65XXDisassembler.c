@@ -119,31 +119,33 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo, int cpu_type)
 	switch(opinfo.ins) {
 		case MOS65XX_INS_ADC:
 		case MOS65XX_INS_SBC:
-			/* ADC / SBC depend on the decimal status */
+		case MOS65XX_INS_ROL:
+		case MOS65XX_INS_ROR:
+			/* these read carry flag (and decimal for ADC/SBC) */
 			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_P;
 			break;
 		/* stack operations */
-		case MOS65XX_INS_PLA:
-		case MOS65XX_INS_PLX:
-		case MOS65XX_INS_PLY:
-		case MOS65XX_INS_PLD:
-		case MOS65XX_INS_PLB:
-		case MOS65XX_INS_PLP:
-		case MOS65XX_INS_PHP:
-		case MOS65XX_INS_PHD:
-		case MOS65XX_INS_PHA:
-		case MOS65XX_INS_PHX:
-		case MOS65XX_INS_PHY:
-		case MOS65XX_INS_PHK:
-		case MOS65XX_INS_PHB:
+		case MOS65XX_INS_JSL:
+		case MOS65XX_INS_JSR:
 		case MOS65XX_INS_PEA:
 		case MOS65XX_INS_PEI:
 		case MOS65XX_INS_PER:
+		case MOS65XX_INS_PHA:
+		case MOS65XX_INS_PHB:
+		case MOS65XX_INS_PHD:
+		case MOS65XX_INS_PHK:
+		case MOS65XX_INS_PHP:
+		case MOS65XX_INS_PHX:
+		case MOS65XX_INS_PHY:
+		case MOS65XX_INS_PLA:
+		case MOS65XX_INS_PLB:
+		case MOS65XX_INS_PLD:
+		case MOS65XX_INS_PLP:
+		case MOS65XX_INS_PLX:
+		case MOS65XX_INS_PLY:
+		case MOS65XX_INS_RTI:
 		case MOS65XX_INS_RTL:
 		case MOS65XX_INS_RTS:
-		case MOS65XX_INS_RTI:
-		case MOS65XX_INS_JSR:
-		case MOS65XX_INS_JSL:
 			detail->regs_read[detail->regs_read_count++] = MOS65XX_REG_SP;
 			detail->regs_write[detail->regs_write_count++] = MOS65XX_REG_SP;
 			break;
