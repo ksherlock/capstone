@@ -195,7 +195,7 @@ typedef struct cs_mos65xx {
 	/// Number of operands of this instruction,
 	/// or 0 when instruction has no operand.
 	uint8_t op_count;
-	cs_mos65xx_op operands[2]; ///< operands for this instruction.
+	cs_mos65xx_op operands[3]; ///< operands for this instruction.
 } cs_mos65xx;
 
 #ifdef __cplusplus
