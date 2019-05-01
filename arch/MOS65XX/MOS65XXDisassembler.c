@@ -54,6 +54,7 @@ static const struct InstructionInfo InstructionInfoTable[]= {
 #ifndef CAPSTONE_DIET
 static void fillDetails(MCInst *MI, struct OpInfo opinfo, int cpu_type)
 {
+	int i;
 	cs_detail *detail = MI->flat_insn->detail;
 
 	InstructionInfo insinfo = InstructionInfoTable[opinfo.ins];
@@ -219,7 +220,7 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo, int cpu_type)
 			break;
 
 		default:
-			for (int i = 0; i < MI->size; ++i) {
+			for (i = 0; i < MI->size; ++i) {
 				detail->mos65xx.operands[detail->mos65xx.op_count].type = MOS65XX_OP_MEM;
 				detail->mos65xx.operands[detail->mos65xx.op_count].mem = MI->Operands[i].ImmVal;
 				detail->mos65xx.op_count++;
@@ -374,6 +375,7 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 							MCInst *MI, uint16_t *size, uint64_t address, void *inst_info)
 {
+	int i;
 	unsigned char opcode;
 	unsigned char len;
 	unsigned cpu_offset = 0;
@@ -440,7 +442,7 @@ bool MOS65XX_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 	/* needed to differentiate relative vs relative long */
 	MI->op1_size = len - 1;
 	if (opinfo.ins == MOS65XX_INS_NOP) {
-		for (int i = 1; i < len; ++i)
+		for (i = 1; i < len; ++i)
 			MCOperand_CreateImm0(MI, code[i]);
 	}
 
