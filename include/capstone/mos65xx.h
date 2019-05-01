@@ -29,30 +29,29 @@ typedef enum mos65xx_address_mode {
 	MOS65XX_AM_NONE = 0, ///< No address mode.
 	MOS65XX_AM_IMP, ///< implied addressing (no addressing mode)
 	MOS65XX_AM_ACC, ///< accumulator addressing
-	MOS65XX_AM_ABS, ///< absolute addressing
-	MOS65XX_AM_ZP,  ///< zeropage addressing
 	MOS65XX_AM_IMM, ///< 8/16 Bit immediate value
-	MOS65XX_AM_ABS_X, ///< indexed absolute addressing by the X index register
-	MOS65XX_AM_ABS_Y, ///< indexed absolute addressing by the Y index register
+	MOS65XX_AM_REL, ///< relative addressing used by branches
+	MOS65XX_AM_INT, ///< interrupt addressing
+	MOS65XX_AM_BLOCK, ///< memory block addressing
+	MOS65XX_AM_ZP,  ///< zeropage addressing
+	MOS65XX_AM_ZP_X, ///< indexed zeropage addressing by the X index register
+	MOS65XX_AM_ZP_Y, ///< indexed zeropage addressing by the Y index register
+	MOS65XX_AM_ZP_REL, ///< zero page address, branch relative address
 	MOS65XX_AM_ZP_IND, ///< indirect zeropage addressing
 	MOS65XX_AM_ZP_X_IND, ///< indexed zeropage indirect addressing by the X index register
 	MOS65XX_AM_ZP_IND_Y, ///< indirect zeropage indexed addressing by the Y index register
-	MOS65XX_AM_ZP_X, ///< indexed zeropage addressing by the X index register
-	MOS65XX_AM_ZP_Y, ///< indexed zeropage addressing by the Y index register
-	MOS65XX_AM_REL, ///< relative addressing used by branches
-	MOS65XX_AM_ABS_IND, ///< absolute indirect addressing
-	MOS65XX_AM_ABS_X_IND, ///< indexed absolute indirect addressing by the X index register
-	MOS65XX_AM_BLOCK, ///< memory block addressing
-	MOS65XX_AM_INT, ///< interrupt addressing
-	MOS65XX_AM_SR, ///< stack relative addressing
-	MOS65XX_AM_SR_IND_Y, ///< indirect stack relative addressing indexed by the Y index register
-	MOS65XX_AM_ZP_REL, ///< zero page address, branch relative address
-	MOS65XX_AM_ABS_IND_LONG, ///< absolute indirect long addressing
 	MOS65XX_AM_ZP_IND_LONG, ///< zeropage indirect long addressing
 	MOS65XX_AM_ZP_IND_LONG_Y, ///< zeropage indirect long addressing indexed by Y register
+	MOS65XX_AM_ABS, ///< absolute addressing
+	MOS65XX_AM_ABS_X, ///< indexed absolute addressing by the X index register
+	MOS65XX_AM_ABS_Y, ///< indexed absolute addressing by the Y index register
+	MOS65XX_AM_ABS_IND, ///< absolute indirect addressing
+	MOS65XX_AM_ABS_X_IND, ///< indexed absolute indirect addressing by the X index register
+	MOS65XX_AM_ABS_IND_LONG, ///< absolute indirect long addressing
 	MOS65XX_AM_ABS_LONG, ///< absolute long address mode
 	MOS65XX_AM_ABS_LONG_X, ///< absolute long address mode, indexed by X register
-
+	MOS65XX_AM_SR, ///< stack relative addressing
+	MOS65XX_AM_SR_IND_Y, ///< indirect stack relative addressing indexed by the Y index register
 } mos65xx_address_mode;
 
 /// MOS65XX instruction

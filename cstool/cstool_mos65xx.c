@@ -15,36 +15,44 @@ static const char *get_am_name(mos65xx_address_mode mode)
 			return "implied";
 		case MOS65XX_AM_ACC:
 			return "accumulator";
+		case MOS65XX_AM_IMM:
+			return "immediate value";
+		case MOS65XX_AM_REL:
+			return "relative";
+		case MOS65XX_AM_INT:
+			return "interrupt signature";
+		case MOS65XX_AM_BLOCK:
+			return "block move";
 		case MOS65XX_AM_ZP:
 			return "zero page";
 		case MOS65XX_AM_ZP_X:
 			return "zero page indexed with x";
 		case MOS65XX_AM_ZP_Y:
 			return "zero page indexed with y";
+		case MOS65XX_AM_ZP_REL:
+			return "relative bit branch";
 		case MOS65XX_AM_ZP_IND:
 			return "zero page indirect";
 		case MOS65XX_AM_ZP_X_IND:
 			return "zero page indexed with x indirect";
 		case MOS65XX_AM_ZP_IND_Y:
 			return "zero page indirect indexed with y";
-		case MOS65XX_AM_ZP_REL:
-			return "relative bit branch";
-		case MOS65XX_AM_REL:
-			return "relative";
-		case MOS65XX_AM_IMM:
-			return "immediate value";
+		case MOS65XX_AM_ZP_IND_LONG:
+			return "zero page indirect long";
+		case MOS65XX_AM_ZP_IND_LONG_Y:
+			return "zero page indirect long indexed with y";
 		case MOS65XX_AM_ABS:
 			return "absolute";
-		case MOS65XX_AM_ABS_IND:
-			return "absolute indirect";
-		case MOS65XX_AM_ABS_IND_LONG:
-			return "absolute indirect long";
 		case MOS65XX_AM_ABS_X:
 			return "absolute indexed with x";
 		case MOS65XX_AM_ABS_Y:
 			return "absolute indexed with y";
+		case MOS65XX_AM_ABS_IND:
+			return "absolute indirect";
 		case MOS65XX_AM_ABS_X_IND:
 			return "absolute indexed with x indirect";
+		case MOS65XX_AM_ABS_IND_LONG:
+			return "absolute indirect long";
 		case MOS65XX_AM_ABS_LONG:
 			return "absolute long";
 		case MOS65XX_AM_ABS_LONG_X:
@@ -53,14 +61,6 @@ static const char *get_am_name(mos65xx_address_mode mode)
 			return "stack relative";
 		case MOS65XX_AM_SR_IND_Y:
 			return "stack relative indirect indexed with y";
-		case MOS65XX_AM_ZP_IND_LONG:
-			return "zero page indirect long";
-		case MOS65XX_AM_ZP_IND_LONG_Y:
-			return "zero page indirect long indexed with y";
-		case MOS65XX_AM_BLOCK:
-			return "block move";
-		case MOS65XX_AM_INT:
-			return "interrupt signature";
 	}
 }
 
