@@ -233,7 +233,7 @@ static void fillDetails(MCInst *MI, struct OpInfo opinfo, int cpu_type)
 void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 {
 #ifndef CAPSTONE_DIET
-	unsigned char opcode = MCInst_getOpcode(MI);
+	unsigned opcode = MCInst_getOpcode(MI);
 	mos65xx_info *info = (mos65xx_info *)PrinterInfo;
 
 	OpInfo opinfo = OpInfoTable[opcode];
@@ -265,10 +265,6 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 			SStream_concat(O, " a");
 			break;
 
-		case MOS65XX_AM_ABS:
-			SStream_concat(O, " %s%04x", prefix, value);
-			break;
-
 		case MOS65XX_AM_IMM:
 			if (MI->imm_size == 1)
 				SStream_concat(O, " #%s%02x", prefix, value);
@@ -278,6 +274,14 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 
 		case MOS65XX_AM_ZP:
 			SStream_concat(O, " %s%02x", prefix, value);
+			break;
+
+		case MOS65XX_AM_ABS:
+			SStream_concat(O, " %s%04x", prefix, value);
+			break;
+
+		case MOS65XX_AM_ABS_LONG_X:
+			SStream_concat(O, " %s%06x, x", prefix, value);
 			break;
 
 		case MOS65XX_AM_INT:
@@ -292,8 +296,8 @@ void MOS65XX_printInst(MCInst *MI, struct SStream *O, void *PrinterInfo)
 			SStream_concat(O, " %s%04x, y", prefix, value);
 			break;
 
-		case MOS65XX_AM_ABS_LONG_X:
-			SStream_concat(O, " %s%06x, x", prefix, value);
+		case MOS65XX_AM_ABS_LONG:
+			SStream_concat(O, " %s%06x", prefix, value);
 			break;
 
 		case MOS65XX_AM_ZP_X:

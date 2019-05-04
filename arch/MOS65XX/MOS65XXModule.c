@@ -12,15 +12,13 @@
 cs_err MOS65XX_global_init(cs_struct *ud)
 {
 	mos65xx_info *info;
-	// verify if requested mode is valid
-	if (ud->mode)
-		return CS_ERR_MODE;
 
 	info = cs_mem_malloc(sizeof(*info));
 	info->hex_prefix = NULL;
 	info->cpu_type = MOS65XX_CPU_TYPE_6502;
 	info->long_m = 0;
 	info->long_x = 0;
+
 
 	ud->printer = MOS65XX_printInst;
 	ud->printer_info = info;
@@ -29,6 +27,10 @@ cs_err MOS65XX_global_init(cs_struct *ud)
 	ud->group_name = MOS65XX_group_name;
 	ud->disasm = MOS65XX_getInstruction;
 	ud->reg_name = MOS65XX_reg_name;
+
+	if (ud->mode) {
+		MOS65XX_option(ud, CS_OPT_MODE, ud->mode);
+	}
 
 	return CS_ERR_OK;
 }
