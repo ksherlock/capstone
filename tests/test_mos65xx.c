@@ -127,16 +127,51 @@ static void print_insn_detail(cs_insn *ins)
 
 static void test()
 {
-#define MOS65XX_CODE "\xa1\x12\xa5\x12\xa9\x12\xad\x34\x12\xb1\x12\xb5\x12\xb9\x34\x12\xbd\x34\x12" \
+#define M6502_CODE "\xa1\x12\xa5\x12\xa9\x12\xad\x34\x12\xb1\x12\xb5\x12\xb9\x34\x12\xbd\x34\x12" \
 	"\x0d\x34\x12\x00\x81\x87\x6c\x01\x00\x85\xFF\x10\x00\x19\x42\x42\x00\x49\x42"
+
+#define M65C02_CODE "\x1a\x3a" \
+	"\x02\x12\x03\x5c\x34\x12"
+
+#define MW65C02_CODE \
+	"\x07\x12\x27\x12\x47\x12\x67\x12\x87\x12\xa7\x12\xc7\x12\xe7\x12" \
+	"\x0f\x12\xfd\x4f\x12\xfd\x8f\x12\xfd\xcf\x12\xfd"
+
+#define M65816_CODE \
+	"\xa9\x34\x12" "\xad\x34\x12" "\xbd\x34\x12" "\xb9\x34\x12" \
+	"\xaf\x56\x34\x12" "\xbf\x56\x34\x12" \
+	"\xa5\x12" "\xb5\x12" "\xb2\x12" "\xa1\x12" "\xb1\x12" "\xa7\x12" "\xb7\x12" \
+	"\xa3\x12" "\xb3\x12" \
+	"\xc2\x00" "\xe2\x00" "\x54\x34\x12" "\x44\x34\x12" "\x02\x12"
 
 	struct platform platforms[] = {
 		{
 			CS_ARCH_MOS65XX,
-			0,
-			(unsigned char *)MOS65XX_CODE,
-			sizeof(MOS65XX_CODE) - 1,
-			"MOS65XX"
+			(cs_mode)(CS_MODE_MOS65XX_6502),
+			(unsigned char *)M6502_CODE,
+			sizeof(M6502_CODE) - 1,
+			"MOS65XX_6502"
+		},
+		{
+			CS_ARCH_MOS65XX,
+			(cs_mode)(CS_MODE_MOS65XX_65C02),
+			(unsigned char *)M65C02_CODE,
+			sizeof(M65C02_CODE) - 1,
+			"MOS65XX_65C02"
+		},
+		{
+			CS_ARCH_MOS65XX,
+			(cs_mode)(CS_MODE_MOS65XX_W65C02),
+			(unsigned char *)MW65C02_CODE,
+			sizeof(MW65C02_CODE) - 1,
+			"MOS65XX_W65C02"
+		},
+		{
+			CS_ARCH_MOS65XX,
+			(cs_mode)(CS_MODE_MOS65XX_65816_LONG_MX),
+			(unsigned char *)M65816_CODE,
+			sizeof(M65816_CODE) - 1,
+			"MOS65XX_65816 (long m/x)"
 		},
 	};
 
@@ -148,7 +183,7 @@ static void test()
 	for (i = 0; i < sizeof(platforms)/sizeof(platforms[0]); i++) {
 		cs_err err = cs_open(platforms[i].arch, platforms[i].mode, &handle);
 		if (err) {
-			printf("Failed on cs_open() with error returned: %u\n", err);
+			printf("Failed on cs_open() with error returned: %u (%s)\n", err, cs_strerror(err));
 			abort();
 		}
 

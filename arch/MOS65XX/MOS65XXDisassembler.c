@@ -513,7 +513,6 @@ const char* MOS65XX_reg_name(csh handle, unsigned int reg)
 void MOS65XX_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
 {
 	/* id is cpu_offset + opcode */
-
 	if (id < ARR_SIZE(OpInfoTable)) {
 		insn->id = OpInfoTable[id].ins;
 	}
