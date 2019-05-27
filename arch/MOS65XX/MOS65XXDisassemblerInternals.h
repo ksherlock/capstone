@@ -12,7 +12,6 @@ enum {
 
 typedef struct mos65xx_info {
 
-	const char *hex_prefix;
 	unsigned cpu_type;
 	unsigned long_m;
 	unsigned long_x;
