@@ -56,7 +56,10 @@ static struct {
 	{ "hd6309", CS_ARCH_M680X, CS_MODE_M680X_6309 },
 	{ "hcs08", CS_ARCH_M680X, CS_MODE_M680X_HCS08 },
 	{ "evm", CS_ARCH_EVM, 0 },
-	{ "mos65xx", CS_ARCH_MOS65XX, 0 },
+	{ "6502", CS_ARCH_MOS65XX, CS_MODE_MOS65XX_6502 },
+	{ "65c02", CS_ARCH_MOS65XX, CS_MODE_MOS65XX_65C02 },
+	{ "w65c02", CS_ARCH_MOS65XX, CS_MODE_MOS65XX_W65C02 },
+	{ "65816", CS_ARCH_MOS65XX, CS_MODE_MOS65XX_65816_LONG_MX },
 	{ NULL }
 };
 
@@ -211,7 +214,10 @@ static void usage(char *prog)
 	}
 
 	if (cs_support(CS_ARCH_MOS65XX)) {
-		printf("        mos65xx     MOS65XX family\n");
+		printf("        6502        MOS 6502\n");
+		printf("        65c02       WDC 65c02\n");
+		printf("        w65c02      WDC w65c02\n");
+		printf("        65816       WDC 65816 (long m/x)\n");
 	}
 
 	printf("\nExtra options:\n");
